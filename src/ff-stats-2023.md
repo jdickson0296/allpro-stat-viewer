@@ -1,27 +1,19 @@
 ---
-theme: ocean-floor
+theme: stark
 title: Fantasy Football 2023
 toc: false
 ---
 
 # 2023 Data 🏈
 
+
 <!-- Load & Clean Data - 2023 Sunday Funday League -->
 ```js
 var playerData = FileAttachment("data/players_espn_2023.csv").csv({typed: true})
 ```
 
-```js
-var filteredPlayerData = playerData.map(item => ({
-  name: item.name,
-  position: item.position,
-  projected_points: item.projected_points,
-  points: item.points
-}));
-```
 
-
-<!-- Create position selection button -->
+<!-- Create position and league selection buttons -->
 ```js
 import {select, color} from "npm:@observablehq/inputs";
 
@@ -30,13 +22,9 @@ var position = view(
     {label: "Position"
     })
 );
-```
 
-
-<!-- Create league selection button -->
-```js
 var league = view(
-    Inputs.select(["Sunday Funday", "B&H", "Johnson's"], 
+    Inputs.select(["Sunday Funday", "Johnson's"], 
     {label: "League"
     })
 );
@@ -45,32 +33,29 @@ var league = view(
 
 <!-- Filter the data -->
 ```js
-var positionData = playerData.filter(item => item.position === position);
-```
-
-```js
+var teamData = playerData.filter(item => item.league_name === league);
+var positionData = teamData.filter(item => item.position === position);
 var playerRatioData = [];
+var splitData = [];
+
 for (var i = 0; i < positionData.length; i++) {
     playerRatioData.push({
                     name: positionData[i].name, 
                     position: positionData[i].position, 
-                    ratio: ((positionData[i].points / positionData[i].projected_points) * 100)
+                    ratio: ((positionData[i].total_points / positionData[i].total_projected_points) * 100)
     });
 };
-```
 
-```js
-var splitData = [];
 for (let i = 0; i < positionData.length; i++) {
     splitData.push({
         name: positionData[i].name,
         pointType: "actual",
-        points: positionData[i].points,
+        points: positionData[i].total_points,
     });
     splitData.push({
         name: positionData[i].name,
         pointType: "projected",
-        points: positionData[i].projected_points,
+        points: positionData[i].total_projected_points,
     });
 };
 ```
@@ -83,7 +68,7 @@ function playerTotal(data, {width} = {}) {
         title: "Players Total & Projected Points",
         y: {axis: null},
         x: {tickFormat: "s", grid: true},
-        color: {scheme: "blues", legend: true},
+        color: {scheme: "rdgy", legend: true},
         marginLeft: 120,
         marginRight: 100,
         marginTop: 10,
@@ -92,21 +77,19 @@ function playerTotal(data, {width} = {}) {
         width,
         marks: [
             Plot.barX(splitData, {
-            y: "pointType",
-            x: "points",
-            fill: "pointType",
-            fy: "name",
-            tip: true,
-            sort: {y: null, color: null, fy: {value: '-x', reduce: 'sum'}},
+                y: "pointType",
+                x: "points",
+                fill: "pointType",
+                fy: "name",
+                tip: true,
+                sort: {fy: {value: '-x', reduce: 'max'}},
             }),
             Plot.text(splitData, {y:'pointType', x:'points',text:'points', dx: 20, fy: "name"}),
             Plot.ruleX([0])
         ]
     });
 }
-```
 
-```js
 function playerRatio(data, {width} = {}) {
     return Plot.plot({
         title: "Player Scored vs. Projected Ratio (%)",
@@ -117,13 +100,21 @@ function playerRatio(data, {width} = {}) {
         width,
         grid: true,
         marks: [
-            Plot.rectX(playerRatioData, {x: "ratio", y: "name", sort: {y: "x", reverse: true}, fill: "#2C83DB", tip: true}),
-            Plot.text(playerRatioData, {x:'ratio', y:'name',text:'ratio', dx: 25}),
+            Plot.rectX(playerRatioData, {
+                x: "ratio", 
+                y: "name", 
+                sort: {y: "x", reverse: true}, 
+                fill: "#ef8a62", tip: true}),
+            Plot.text(playerRatioData, {
+                x:'ratio', 
+                y:'name', 
+                text:'ratio', 
+                dx: 25}),
             Plot.ruleX([0])
         ]
     });
 }
-``` 
+```
 
 
 <!-- Plot -->
